@@ -6,14 +6,14 @@ The goal of the game is to think names that fit a given set of initials.
 The names you provide should be names of well known people or ficitonal characters, as the game relies on the other players to confirm if your name is valid. 
 
 For example, lets say these are your first 3 sets of initials: (you usually play with 26 sets per round)
-  AD - 
-  BM - 
-  CA -
+  -AD - 
+  -BM - 
+  -CA -
 
 Here are some valid names you could add to your list:
-  AD - Albus Dumbledore
-  BM - Billy Mays
-  CA - Christina Aguilera
+  -AD - Albus Dumbledore
+  -BM - Billy Mays
+  -CA - Christina Aguilera
 
 Then at the end of the game you tally up points (not in this version of the game yet)
 
