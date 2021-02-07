@@ -1,6 +1,7 @@
 from letter_gen import gen_start
 from collections import OrderedDict
 from initials_database import InitialsDatabase
+from initials_game_session import InitialsGameSession
 import re
 import threading
 import time
@@ -35,14 +36,6 @@ def timer_initialization():
 
 	return timer_duration
 
-# ----------- SETUP FUNCTIONS --------------- #
-
-def create_user_answer_dict():
-	# We need this function so we can create a blank dictionary
-	# where the players answers will be stored. 
-	for initial_pair in game_initials:
-		user_dict[initial_pair] = ""
-
 # ------------ GAME START FUNCTIONS --------------- #
 
 def user_id_loop():
@@ -72,12 +65,6 @@ def user_id_loop():
 	return user_id_to_check
 
 # ----------- GAMEPLAY FUNCTIONS --------------- #
-
-def display_inits_as_list():
-	# This function displays the users dictionary and any new additions
-	# they have made eveyrtime it is called.
-	for initial_pair in user_dict:
-		print("".join(("".join(initial_pair) + " - ", user_dict[initial_pair])))
 
 def check_for_game_over():
 	global game_over
@@ -121,33 +108,6 @@ def initial_extraction(i):
 
 	return initial_combos
 	
-def extraction_check(initial_combos):	
-	# Now that we have the combos the player could be referencing, we need to
-	# check this against our list of game initials. There could be multiple.
-	# for example "Sarah Jessica Parker" outputs (S,J) and (S,P) as possible combos.
-
-	# This list below will hold all the possible dict matches the player
-	# could be refencing until they choose which one they meant later. 
-	dict_matches = []
-
-	# Now we match all our possible combos to our game initials and add any
-	# possible ones to the lsit we just created.
-	for combo in initial_combos:
-		if combo in user_dict.keys():
-			dict_matches.append(combo)
-		else:
-			pass
-
-	return dict_matches
-
-def no_match_processing():
-	print("Couldn't find a match. Try again.\n")
-
-def add_to_list(i, matches, dict_index):	
-	# This gets called if there is only one potential match, and this adds the match to the list.
-	print("Adding %s to your list." % i)
-	user_dict[matches[dict_index]] = i.title().strip()
-
 def multi_match_processing(i, matches):
 		print("There are %d matches this could be." % len(matches))
 		print("Here they are:")
@@ -165,7 +125,7 @@ def multi_match_processing(i, matches):
 			try:
 				if int(match_num) in multiple_match_dict.keys():
 					print("Adding %s to your list." % i)
-					add_to_list(i, matches, (int(match_num)-1))
+					game_session.add_answer(i, matches, (int(match_num)-1))
 					break
 				elif int(match_num) not in multiple_match_dict.keys():	
 					print("%s is not one of the available options." % match_num)
@@ -184,10 +144,7 @@ valid_user_id = user_id_loop()
 game_initials = gen_start()
 
 # Here we create an empty ordered dictionary that will store the user's answers
-user_dict = OrderedDict()
-
-# And then we add our initials to it
-create_user_answer_dict()
+game_session = InitialsGameSession(game_initials)
 
 # Then we need to see how long the user wants to play and initialize the timer thread.
 timer_duration = timer_initialization()
@@ -203,7 +160,7 @@ def main_gameplay_loop():
 	# First we check if the game is over
 	check_for_game_over()
 	# Then if not we display initials & answers as a list
-	display_inits_as_list()
+	game_session.display()
 	# Then we take input for a new name
 	print("Input a name:")
 	i = take_input()
@@ -214,13 +171,13 @@ def main_gameplay_loop():
 	###below used for testing
 	###print("here are the possible initial combos:\n", extracted_combos)
 	# Input check extracts initials and 
-	matches = extraction_check(extracted_combos)
+	matches = game_session.find_matches(extracted_combos)
 	# Now that we have a list of 0 or more matches, we can move on to match processing.
 	if len(matches) < 1:
-		no_match_processing()
+		print("Couldn't find a match. Try again.\n")
 	elif len(matches) == 1:
 		print("Adding %s to your list." % i)
-		add_to_list(i, matches, 0)
+		game_session.add_answer(i, matches, 0)
 	else:
 		multi_match_processing(i, matches)
 
@@ -238,7 +195,7 @@ def end_game():
 	time.sleep(1)
 	print("Here is your final list:\n")
 	time.sleep(1)
-	display_inits_as_list()
+	game_session.display()
 	print(f"Thanks for playing, {valid_user_id}! Now we want to add these values to the database.")
 
 
@@ -248,7 +205,7 @@ def end_game():
 
 
 	# Now that we have a game ID, we want to insert our game answers to the DB.
-	db.commit_game_answers_to_db(current_game_id, valid_user_id, user_dict)
+	db.commit_game_answers_to_db(current_game_id, valid_user_id, game_session.user_answers)
 
 	time.sleep(1)
 
@@ -271,7 +228,7 @@ def end_game():
 	# Now we know there is a past high score, we need to check if the current game  higher than the past hi score.
 	# This func will return a true answer if the current game is higher. 
 	print(f"This game you got {current_game_score} names.")
-	print(f"{user_id}\'s previous high score  {prev_high_score} names.")
+	print(f"{valid_user_id}\'s previous high score  {prev_high_score} names.")
 	current_game_higher_tf = db.compare_scores(current_game_score, prev_high_score, valid_user_id)
 
 	if current_game_higher_tf == True:
