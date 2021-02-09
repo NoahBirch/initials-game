@@ -131,9 +131,7 @@ What would you like in your RIGHT column?:\n
 		input("> ")
 		gen_start()
 
-	print("\nGreat! Thanks for choosing your columns. Press RETURN to pass them to the display part of the game.\n")
-	input("> ")
-	print("\n")
+	print("\nGreat! Thanks for setting your game initials.")
 	game_initials = zip(left_column, right_column)
 	return game_initials
 	#for pair in output_pairs:

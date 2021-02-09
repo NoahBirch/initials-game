@@ -2,14 +2,13 @@ from collections import OrderedDict
 
 class InitialsGameSession:
 
-	def __init__(self, initials):
+	def __init__(self, initials, user_id):
 		self.initials = initials
 		self.user_answers = self.create_user_answer_dict()
-
+		self.user_id = user_id
 
 	def create_user_answer_dict(self):
-		# We need this function so we can create a blank dictionary
-		# where the players answers will be stored. 
+		# Create a blank dictionary 
 		user_dict = OrderedDict()
 		for initial_pair in self.initials:
 			user_dict[initial_pair] = ""
@@ -32,7 +31,6 @@ class InitialsGameSession:
 
 		return matches
 
-
 	def add_answer(self, i, matches, dict_index):	
 		# This gets called if there is only one potential match, and this adds the match to the list.
 		self.user_answers[matches[dict_index]] = i.title().strip()
@@ -43,5 +41,3 @@ class InitialsGameSession:
 		# they have made eveyrtime it is called.
 		for initial_pair in self.user_answers:
 			print("".join(("".join(initial_pair) + " - ", self.user_answers[initial_pair])))
-
-
