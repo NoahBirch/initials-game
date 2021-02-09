@@ -18,6 +18,6 @@ Here are some valid names you could add to your list:
 Then at the end of the game you tally up points (not in this version of the game yet)
 
 This python 3 based version of the game I am building so far has this functionality:
-  - 1 player mode only, currently set to 60 second duration (classic game is played over 10 minutes)
+  - 1 player or 2 players can play a game with the same initials. 
   - Automatically generate 26 sets of initials based on user picked criteria
-  - Accepts and commits your entries to a temporary list.
+  - Accepts and commits your entries to a database based on your user id. 
