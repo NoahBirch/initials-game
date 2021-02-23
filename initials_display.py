@@ -1,10 +1,10 @@
-from initials_database import InitialsDatabase
 from initials_game_session import InitialsGameSession
 from game_setup import InitialsSetup
 import re
 import threading
 import time
 from pynput.keyboard import Key, Controller
+import json
 
 keyboard = Controller()
 
@@ -22,16 +22,6 @@ def count_1_sec(duration):
 
 	game_over = True
 	keyboard.press(Key.enter)
-
-def timer_initialization():
-	while True:
-		try: 
-			timer_duration = int(input("How many seconds would you like to play?\n>"))
-			break
-		except:
-			print("That's not a valid amount of seconds.")
-
-	return timer_duration
 
 
 # ----------- GAMEPLAY FUNCTIONS --------------- #
@@ -104,20 +94,17 @@ def multi_match_processing(i, matches):
 
 # First part of our gameplay is establishing a db connection and determing what user is playing. InitialsSetup handles this: 
 game_setup = InitialsSetup()
-db = game_setup.db
+conn = game_setup.conn
 user_id = game_setup.user_id
-
-#now we need to determine the game mode and wait for people to join if its multiplayer. 
-game_id = game_setup.game_mode_prompt()
+game_id = game_setup.game_id
 print("returned game ID:", game_id)
-# Here we generate the initials we will be using for the game
-game_initials = db.get_initials_from_game_id(game_id)
+game_initials = game_setup.game_initials
+timer_duration = game_setup.game_duration
 
 # Now that we have our user and our initials, we can start a game session for that user. 
 game_session = InitialsGameSession(game_initials, user_id)
 
-# Then we need to see how long the user wants to play and initialize the timer thread.
-timer_duration = timer_initialization()
+# initialize the timer thread.
 timer_thread = threading.Thread(target=count_1_sec, args=(timer_duration,))
 
 # Then we display the timer duration so the player knows how long they are playing
@@ -169,24 +156,28 @@ def end_game():
 	print(f"Thanks for playing, {user_id}! Now we want to add these values to the database.")
 
 
-
-
-	# Now that we have a game ID, we want to insert our game answers to the DB.
-	db.commit_game_answers_to_db(game_id, user_id, game_session.user_answers)
+	json_dict_answers = game_session.return_answers_for_JSON()
+	json_string = json.dumps({ "game_id" : game_id, "user_id" : user_id, "data" : json_dict_answers })
+	game_setup.server_to_db_func(server_func= 'DBFUNC_ANSWERS_COMMIT', body= json_string)
 
 	time.sleep(1)
 
 	###### now we go into our answer processing functions. first we get the current game score and past high score from the DB:
-	current_game_score = db.tally_game_score_primitive(game_id, user_id)
-	prev_high_score = db.get_prev_high_score(user_id)
+	current_game_score = game_setup.server_to_db_func(server_func= 'DBFUNC_FETCH1', body=("tally_game_score_primitive|"+game_id+"|"+user_id))
+	prev_high_score = game_setup.server_to_db_func(server_func= 'DBFUNC_FETCH1', body=("get_prev_high_score|"+user_id))
 
 	# Now we check if this was their first game. This will return true if it is. 
-	first_game_tf = db.check_if_first_game(prev_high_score)
+	first_game_tf = game_setup.server_to_db_func(server_func= 'DBFUNC_FETCH1', body=("check_if_first_game|"+prev_high_score))
+	if "true" in first_game_tf:
+		first_game_tf = True
+	else:
+		first_game_tf = False
+	
 
 	if first_game_tf == True:
 		# if its the first game, we know we definitely want to update their score, cause it will be null on default.
 		print(f"Looks like this is your first game! Setting your brand new high score of {current_game_score}!")
-		db.commit_new_high_score(current_game_score, user_id)
+		game_setup.server_to_db_func(server_func= 'DBFUNC_FETCH1', body=("commit_new_high_score|"+current_game_score+"|"+user_id))
 		print("Ending game.")
 		exit()
 	else:
@@ -195,13 +186,18 @@ def end_game():
 	# Now we know there is a past high score, we need to check if the current game  higher than the past hi score.
 	# This func will return a true answer if the current game is higher. 
 	print(f"This game you got {current_game_score} names.")
-	print(f"{user_id}\'s previous high score  {prev_high_score} names.")
-	current_game_higher_tf = db.compare_scores(current_game_score, prev_high_score, user_id)
+	print(f"{user_id}\'s previous high score was {prev_high_score} names.")
+	current_game_higher_tf = game_setup.server_to_db_func(server_func= 'DBFUNC_FETCH1', body=("compare_scores|"+current_game_score+"|"+prev_high_score+"|"+user_id))
+	if "true" in current_game_higher_tf:
+		current_game_higher_tf = True
+	else:
+		current_game_higher_tf = False
+
 
 	if current_game_higher_tf == True:
 		# if its not a new game we execute this if the current game was higher than the previous high score. 
 		print(f"Awesome, looks like {current_game_score} is your new high score! Updating that now!")
-		db.commit_new_high_score(current_game_score, user_id)
+		game_setup.server_to_db_func(server_func= 'DBFUNC_FETCH1', body=("commit_new_high_score|"+current_game_score+"|"+user_id))
 
 	else:
 		print("Aww man. You failed to beat your previous high score. Maybe next time!")

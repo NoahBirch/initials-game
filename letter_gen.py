@@ -15,14 +15,21 @@ def random_a_to_z():
 
 def sentence():
 	"""Outputs a set of letters from a sentence in order pulled from a .txt file"""
-	open_text = open("christmas_carol.txt")
-	read_whole_text = open_text.read()
-	length_of_text = int(len(read_whole_text))
-	# This determines a random spot to grab 100 characters from
-	# and ensures it does so before the end of the file.
-	start_of_100char = (random.randint(1, (length_of_text - 100)))
-	open_text.seek(start_of_100char)
-	str_100_char = str(open_text.read(100))
+	while True:
+		open_text = open("christmas_carol.txt")
+		read_whole_text = open_text.read()
+		length_of_text = int(len(read_whole_text))
+		# This determines a random spot to grab 100 characters from
+		# and ensures it does so before the end of the file.
+		start_of_100char = (random.randint(1, (length_of_text - 100)))
+		open_text.seek(start_of_100char)
+		try:
+			str_100_char = str(open_text.read(100))
+			break
+		except:
+			open_text.close()
+
+	open_text.close()
 	# This finds where the first space occurs. 
 	first_space = str_100_char.find(" ") + 1
 	# This trims the string from the first space spot to the end. -1 is shorthand for the end of a list.
@@ -95,43 +102,15 @@ def sentence():
 	return wanted_chars
 
 def gen_start():
-	"""Starts the program and takes user input to determine which initals will be output.
-	The output is then returned as game_initials"""
-	print("""\nHello! Welcome to initials generation.
-What would you like for your LEFT column?:\n
-1 - A-Z characters in alphabetical order
-2 - A-Z characters in random order
-3 - A sentence selected at random from 'A Christmas Carol' by Charles Dickens\n""")
-	left_column = input("> ")
-	if left_column == "1":
-		left_column = a_to_z()		
-	elif left_column == "2":
-		left_column = random_a_to_z()
-	elif left_column == "3":
-		left_column = sentence()
-	else:
-		print("Invalid answer. Hit RETURN to start over.")
-		input("> ")
-		gen_start()
 
-	print("""\nGreat! Your left column is set.
-What would you like in your RIGHT column?:\n
-1 - A-Z characters in alphabetical order
-2 - A-Z characters in random order
-3 - A sentence selected at random from 'A Christmas Carol' by Charles Dickens\n""")
-	right_column = input("> ")
-	if right_column == "1":
-		right_column = a_to_z()
-	elif right_column == "2":
-		right_column = random_a_to_z()
-	elif right_column == "3":
-		right_column = sentence()
-	else:
-		print("Invalid answer. Hit RETURN to start over.")
-		input("> ")
-		gen_start()
+	left_column = left_column_select()
+
+	print("""\nGreat! Your left column is set.""")
+
+	right_column = right_column_select()
 
 	print("\nGreat! Thanks for setting your game initials.")
+
 	game_initials = zip(left_column, right_column)
 	return game_initials
 	#for pair in output_pairs:
@@ -140,4 +119,37 @@ What would you like in your RIGHT column?:\n
 
 #This is for if you just want to test the program. 
 #gen_start()
-
+def left_column_select():
+	print("""\nHello! Welcome to initials generation.
+What would you like for your LEFT column?:\n
+1 - A-Z characters in alphabetical order
+2 - A-Z characters in random order
+3 - A sentence selected at random from 'A Christmas Carol' by Charles Dickens\n""")
+	while True:
+		i = input("> ")
+		if i == "1":
+			return a_to_z()		
+		elif i == "2":
+			return random_a_to_z()
+		elif i == "3":
+			return sentence()
+		else:
+			print("Invalid answer. type 1, 2 or 3 and hit RETURN.")
+		
+def right_column_select():
+	print("""\nHello! Welcome to initials generation.
+What would you like for your RIGHT column?:\n
+1 - A-Z characters in alphabetical order
+2 - A-Z characters in random order
+3 - A sentence selected at random from 'A Christmas Carol' by Charles Dickens\n""")
+	while True:
+		i = input("> ")
+		if i == "1":
+			return a_to_z()		
+		elif i == "2":
+			return random_a_to_z()
+		elif i == "3":
+			return sentence()
+		else:
+			print("Invalid answer. type 1, 2 or 3 and hit RETURN.")
+		

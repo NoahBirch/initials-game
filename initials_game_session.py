@@ -3,15 +3,16 @@ from collections import OrderedDict
 class InitialsGameSession:
 
 	def __init__(self, initials, user_id):
-		self.initials = initials
+		self.initials = initials.split("*")
 		self.user_answers = self.create_user_answer_dict()
 		self.user_id = user_id
 
 	def create_user_answer_dict(self):
 		# Create a blank dictionary 
 		user_dict = OrderedDict()
+
 		for initial_pair in self.initials:
-			user_dict[initial_pair] = ""
+			user_dict[initial_pair[0], initial_pair[1]] = ""
 		return user_dict
 		
 	def find_matches(self, candidate_answers):	
@@ -41,3 +42,9 @@ class InitialsGameSession:
 		# they have made eveyrtime it is called.
 		for initial_pair in self.user_answers:
 			print("".join(("".join(initial_pair) + " - ", self.user_answers[initial_pair])))
+
+	def return_answers_for_JSON(self):
+		json_dict = {}
+		for initial_pair in self.initials:
+			json_dict["".join(initial_pair)] = self.user_answers[(initial_pair[0], initial_pair[1])]
+		return json_dict
