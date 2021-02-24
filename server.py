@@ -145,7 +145,8 @@ def run():
 
 	#ip and port of servr  
 	#by default http server port is 80  
-	server_address = ('127.0.0.1', 5000)  
+	server_address = ('192.168.1.126', 5000)  
+	#server_address = ('127.0.0.1', 5000)  
 	httpd = HTTPServer(server_address, HTTPRequestHandler)
 
 	print('http server is running...')  
