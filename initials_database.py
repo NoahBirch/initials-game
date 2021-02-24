@@ -27,12 +27,21 @@ class InitialsDatabase:
 		return db_return_list
 
 	def initialize_initials_to_db(self, current_game_id, game_initials):
-		initials_to_initialize = []
-		for initial_pair in game_initials:
-			initials_to_initialize.append((("".join(initial_pair)), current_game_id))
+		initials_to_initialize = [(x, current_game_id) for x in game_initials.split("*")]
+		#for initial_pair in game_initials:
+		#	initials_to_initialize.append((("".join(initial_pair)), current_game_id))
 		mycursor = self.connection.cursor()
 		sql_answer_format = "INSERT INTO initials_answers (initials, game_id) VALUES (%s, %s)"
 		mycursor.executemany(sql_answer_format, initials_to_initialize)
+		self.connection.commit()
+		print("YIPPEEE")
+
+	def initialize_duration_to_db(self, game_id, timer_setting):
+		##COMPLETE THIS FUNC WHERE YOU COMMIT TIMER TO DB, THEN MAKE A DB FUNC TO GET IT.
+		mycursor = self.connection.cursor()
+		sql_answer_format = "UPDATE game SET duration = %s WHERE game_id = %s"
+		sql_values = (timer_setting, game_id)
+		mycursor.execute(sql_answer_format, sql_values)
 		self.connection.commit()
 
 	def get_initials_from_game_id(self, game_id):
@@ -41,12 +50,28 @@ class InitialsDatabase:
 		fetched_inits = mycursor.fetchall()
 		game_initials = []
 		for inits in fetched_inits:
-			game_initials.append(tuple(inits[0]))
+			game_initials.append(inits[0])
 
+		game_initials = ("*".join(game_initials), "")
 		print("heres game initals:", game_initials)
 		return game_initials
 
+	def get_duration_from_game_id(self, game_id):
+		mycursor = self.connection.cursor()
+		mycursor.execute("SELECT duration FROM game WHERE game_id = %s" % (game_id))
+		fetched_duration = mycursor.fetchone()[0]
+		print("heres fetched duration:", fetched_duration)
+		print("duration is type:", type(fetched_duration))
+		return fetched_duration
+
 	def commit_game_answers_to_db(self, current_game_id, valid_user_id, user_dict):
+		mycursor = self.connection.cursor()
+		sql_answer_format = "INSERT INTO initials_answers (initials, answer, game_id, user_id) VALUES (%s, %s, %s, %s)"
+		val_answer = self.return_list_for_db(current_game_id, valid_user_id, user_dict)
+		mycursor.executemany(sql_answer_format, val_answer)
+		self.connection.commit()
+
+	def commit_game_answers_to_db_NEW(self, current_game_id, valid_user_id, user_dict):
 		mycursor = self.connection.cursor()
 		sql_answer_format = "INSERT INTO initials_answers (initials, answer, game_id, user_id) VALUES (%s, %s, %s, %s)"
 		val_answer = self.return_list_for_db(current_game_id, valid_user_id, user_dict)
@@ -75,7 +100,7 @@ class InitialsDatabase:
 		mycursor.execute("SELECT * FROM initials_answers WHERE game_id = '%s' AND answer <> '' AND user_id = '%s' " % (game_id, user_id))
 
 		score = len(mycursor.fetchall())
-		return score
+		return score 
 
 	def get_prev_high_score(self, user_id):
 		mycursor = self.connection.cursor()
@@ -103,7 +128,7 @@ class InitialsDatabase:
 		self.connection.commit()
 		return user_id_to_add
 
-	def check_for_open_game(self, user_id, game_id_input):
+	def check_for_open_game(self, game_id_input):
 		"""Returns a match if there is an open game with the inputted game id, returns nothing if not"""
 		mycursor = self.connection.cursor()
 		mycursor.execute("SELECT game_id FROM game WHERE game_id = %s AND finished = '0' " % (game_id_input))
@@ -122,4 +147,20 @@ class InitialsDatabase:
 		results = mycursor.fetchall()
 		self.connection.commit()
 		return results
+
+	def start_game_mark_finished(self, game_id):
+		"""This starts the game which turns the game to finished. 
+		But who ever is already has joined will be triggered to start the game"""
+		mycursor = self.connection.cursor()
+		mycursor.execute("UPDATE game SET finished = '1' WHERE game_id = %s " % (game_id))
+		self.connection.commit()
+
+	def check_for_game_finished(self, game_id):
+		"""Returns 1 if game is started"""
+		mycursor = self.connection.cursor()
+		mycursor.execute("SELECT finished FROM game WHERE game_id = %s " % (game_id))
+		results = mycursor.fetchone()
+		self.connection.commit()
+		return results
+
 
